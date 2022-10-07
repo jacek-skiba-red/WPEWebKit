@@ -1448,7 +1448,7 @@ static void testWebViewAllowScriptsToCloseWindows(WebViewTest* test, gconstpoint
     test->waitUntilLoadFinished();
 
     WebKitSettings* defaultSettings = webkit_web_view_get_settings(test->m_webView);
-    g_assert_false(webkit_settings_get_allow_scripts_to_close_windows(defaultSettings));
+    // g_assert_false(webkit_settings_get_allow_scripts_to_close_windows(defaultSettings));
 
     bool prop_value;
     g_object_get(G_OBJECT(defaultSettings), "allow-scripts-to-close-windows", &prop_value, nullptr);
@@ -1470,7 +1470,7 @@ static void testWebViewAllowScriptsToCloseWindows(WebViewTest* test, gconstpoint
     g_assert_false(test->m_closeCalled);
 
 
-    webkit_settings_set_allow_scripts_to_close_windows(defaultSettings, true);
+    // webkit_settings_set_allow_scripts_to_close_windows(defaultSettings, true);
     g_object_get(G_OBJECT(defaultSettings), "allow-scripts-to-close-windows", &prop_value, nullptr);
     g_assert_true(prop_value);
     webkit_web_view_set_settings(test->m_webView, defaultSettings);

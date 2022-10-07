@@ -49,7 +49,7 @@ JSFinalizationRegistry* JSFinalizationRegistry::create(VM& vm, Structure* struct
 void JSFinalizationRegistry::finishCreation(VM& vm, JSObject* callback)
 {
     Base::finishCreation(vm);
-    ASSERT(callback->isCallable(vm));
+    // ASSERT(callback->isCallable(vm));
     auto values = initialValues();
     for (unsigned index = 0; index < values.size(); ++index)
         Base::internalField(index).setWithoutWriteBarrier(values[index]);

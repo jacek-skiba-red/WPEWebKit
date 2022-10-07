@@ -422,13 +422,13 @@ static void webKitSettingsSetProperty(GObject* object, guint propId, const GValu
         webkit_settings_set_media_content_types_requiring_hardware_support(settings, g_value_get_string(value));
         break;
     case PROP_ENABLE_WEBSECURITY:
-        webkit_settings_set_enable_websecurity(settings, g_value_get_boolean(value));
+        // webkit_settings_set_enable_websecurity(settings, g_value_get_boolean(value));
         break;
     case PROP_ALLOW_RUNNING_OF_INSECURE_CONTENT:
-        webkit_settings_set_allow_running_of_insecure_content(settings, g_value_get_boolean(value));
+        // webkit_settings_set_allow_running_of_insecure_content(settings, g_value_get_boolean(value));
         break;
     case PROP_ALLOW_DISPLAY_OF_INSECURE_CONTENT:
-        webkit_settings_set_allow_display_of_insecure_content(settings, g_value_get_boolean(value));
+        // webkit_settings_set_allow_display_of_insecure_content(settings, g_value_get_boolean(value));
         break;
 #if PLATFORM(WPE)
     case PROP_ALLOW_SCRIPTS_TO_CLOSE_WINDOWS:
@@ -436,7 +436,7 @@ static void webKitSettingsSetProperty(GObject* object, guint propId, const GValu
         break;
 #endif
     case PROP_ENABLE_DIRECTORY_UPLOAD:
-        webkit_settings_set_enable_directory_upload(settings, g_value_get_boolean(value));
+        // webkit_settings_set_enable_directory_upload(settings, g_value_get_boolean(value));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, propId, paramSpec);
@@ -638,13 +638,13 @@ static void webKitSettingsGetProperty(GObject* object, guint propId, GValue* val
         g_value_set_string(value, webkit_settings_get_media_content_types_requiring_hardware_support(settings));
         break;
     case PROP_ENABLE_WEBSECURITY:
-        g_value_set_boolean(value, webkit_settings_get_enable_websecurity(settings));
+        // g_value_set_boolean(value, webkit_settings_get_enable_websecurity(settings));
         break;
     case PROP_ALLOW_RUNNING_OF_INSECURE_CONTENT:
-        g_value_set_boolean(value, webkit_settings_get_allow_running_of_insecure_content(settings));
+        // g_value_set_boolean(value, webkit_settings_get_allow_running_of_insecure_content(settings));
         break;
     case PROP_ALLOW_DISPLAY_OF_INSECURE_CONTENT:
-        g_value_set_boolean(value, webkit_settings_get_allow_display_of_insecure_content(settings));
+        // g_value_set_boolean(value, webkit_settings_get_allow_display_of_insecure_content(settings));
         break;
 #if PLATFORM(WPE)
     case PROP_ALLOW_SCRIPTS_TO_CLOSE_WINDOWS:
@@ -652,7 +652,7 @@ static void webKitSettingsGetProperty(GObject* object, guint propId, GValue* val
         break;
 #endif
     case PROP_ENABLE_DIRECTORY_UPLOAD:
-        g_value_set_boolean(value, webkit_settings_get_enable_directory_upload(settings));
+        // g_value_set_boolean(value, webkit_settings_get_enable_directory_upload(settings));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, propId, paramSpec);

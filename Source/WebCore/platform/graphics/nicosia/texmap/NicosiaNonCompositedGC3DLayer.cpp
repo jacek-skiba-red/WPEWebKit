@@ -63,10 +63,12 @@ NonCompositedGC3DLayer::NonCompositedGC3DLayer(GraphicsContextGLOpenGL& context,
 {
     switch (destination) {
     case GraphicsContextGLOpenGL::Destination::DirectlyToHostWindow:
+        /*
         if (!s_windowContext) {
             s_windowContext = GLContext::createContextForWindow(reinterpret_cast<GLNativeWindowType>(hostWindow->nativeWindowID()), &PlatformDisplay::sharedDisplayForCompositing());
             std::atexit(terminateWindowContext);
         }
+        */
         break;
     case GraphicsContextGLOpenGL::Destination::Offscreen:
         ASSERT_NOT_REACHED();
