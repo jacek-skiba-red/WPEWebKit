@@ -32,6 +32,7 @@
   <repository type="git" name="aomedia.googlesource.com"
       href="https://aomedia.googlesource.com/"/>
   <repository type="tarball" name="ffmpeg" href="https://ffmpeg.org/releases/"/>
+  <repository type="tarball" name="ftp.gnome.org" href="http://ftp.gnome.org"/>
 
   <meson id="orc" mesonargs="-Dgtk_doc=disabled">
     <branch module="orc/orc-${version}.tar.xz" version="0.4.30"
@@ -56,6 +57,22 @@
             checkoutdir="libsrtp-${version}"/>
   </autotools>
 
+  <autotools id="pango"
+             autogen-sh="configure"
+             autogenargs="--with-cairo --disable-introspection">
+    <branch module="pub/GNOME/sources/pango/1.40/pango-1.40.5.tar.xz" version="1.40.5"
+            repo="ftp.gnome.org"
+            hash="sha256:24748140456c42360b07b2c77a1a2e1216d07c056632079557cd4e815b9d01c9"/>
+    <dependencies>
+      <dep package="glib"/>
+      <dep package="cairo"/>
+         <if condition-unset="macos">
+           <dep package="harfbuzz"/>
+           <dep package="fontconfig"/>
+         </if>
+    </dependencies>
+  </autotools>
+
   <meson id="gstreamer" mesonargs="-Dgtk_doc=disabled -Dintrospection=disabled -Dexamples=disabled -Dtests=disabled">
     <dependencies>
       <dep package="orc"/>
@@ -66,7 +83,7 @@
 
   <meson id="gst-plugins-base" mesonargs="-Dgtk_doc=disabled -Dintrospection=disabled -Dexamples=disabled">
     <if condition-set="wpe">
-      <autogenargs value="-Dpango=disabled"/>
+      <mesonargs value="-Dpango=disabled"/>
     </if>
     <dependencies>
       <dep package="gstreamer"/>
@@ -95,6 +112,7 @@
       <dep package="openh264"/>
       <dep package="aom"/>
       <dep package="libsrtp"/>
+      <dep package="pango"/>
     </dependencies>
     <branch hash="sha256:56481c95339b8985af13bac19b18bc8da7118c2a7d9440ed70e7dcd799c2adb5" module="gst-plugins-bad/gst-plugins-bad-${version}.tar.xz" repo="gstreamer" version="1.16.1">
       <patch file="gst-plugins-bad-0001-h264parse-Post-a-WARNING-when-data-is-broken.patch" strip="1"/> <!-- Merged, discussing backporting https://gitlab.freedesktop.org/gstreamer/gst-plugins-bad/merge_requests/386-->
