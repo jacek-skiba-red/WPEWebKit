@@ -154,6 +154,7 @@ namespace WebCore {
     macro(ShadowRoot) \
     macro(SpectreGadget) \
     macro(StaticRange) \
+    macro(SubtleCrypto) \
     macro(VRDisplay) \
     macro(VRDisplayCapabilities) \
     macro(VRDisplayEvent) \
