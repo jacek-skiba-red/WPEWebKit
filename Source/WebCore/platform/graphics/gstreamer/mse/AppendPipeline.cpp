@@ -1230,9 +1230,7 @@ void AppendPipeline::disconnectDemuxerSrcPadFromAppsinkFromAnyThread(GstPad* dem
     };
 
     auto isAudioOrVideo = [](const std::string& padType) {
-        if (!padType.compare(0, 5, "audio") || !padType.compare(0, 5, "video"))
-            return true;
-        return false;
+        return !padType.compare(0, 5, "audio") || !padType.compare(0, 5, "video");
     };
 
     const char* demuxerSrcPadType = getPadType(demuxerSrcPad);
