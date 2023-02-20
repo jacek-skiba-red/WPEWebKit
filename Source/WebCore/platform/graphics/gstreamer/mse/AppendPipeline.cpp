@@ -1229,7 +1229,15 @@ void AppendPipeline::disconnectDemuxerSrcPadFromAppsinkFromAnyThread(GstPad* dem
         return padCaps ? capsMediaType(padCaps.get()) : nullptr;
     };
 
+    auto isAudioOrVideo = [](const std::string& padType) {
+        if (!padType.compare(0, 5, "audio") || !padType.compare(0, 5, "video"))
+            return true;
+        return false;
+    };
+
     const char* demuxerSrcPadType = getPadType(demuxerSrcPad);
+    if (demuxerSrcPadType && !isAudioOrVideo(demuxerSrcPadType))
+        return;
 
     auto oldPeerPad = adoptGRef(gst_element_get_static_pad(m_appsink.get(), "sink"));
     while (gst_pad_is_linked(oldPeerPad.get())) {
