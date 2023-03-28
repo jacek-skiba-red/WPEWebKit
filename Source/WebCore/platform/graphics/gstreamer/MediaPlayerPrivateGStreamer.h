@@ -247,6 +247,9 @@ public:
     const Logger& mediaPlayerLogger() { return logger(); }
 #endif
 
+    GstElement* videoSink() const { return m_videoSink.get(); }
+    GstElement* audioSink() const;
+
 protected:
     enum MainThreadNotification {
         VideoChanged = 1 << 0,
@@ -269,6 +272,8 @@ protected:
     virtual bool changePipelineState(GstState);
     virtual void updatePlaybackRate();
 
+    void finishSeek();
+
 #if USE(GSTREAMER_HOLEPUNCH)
     GstElement* createHolePunchVideoSink();
     void pushNextHolePunchBuffer();
@@ -288,8 +293,6 @@ protected:
     void swapBuffersIfNeeded() final;
 #endif
 #endif
-
-    GstElement* videoSink() const { return m_videoSink.get(); }
 
     void setStreamVolumeElement(GstStreamVolume*);
 
@@ -351,7 +354,7 @@ protected:
     bool m_didDownloadFinish { false };
     bool m_didErrorOccur { false };
     mutable bool m_isEndReached { false };
-    mutable bool m_isLiveStream { false };
+    mutable std::optional<bool> m_isLiveStream;
     bool m_isPaused { true };
     float m_playbackRate { 1 };
     GstState m_currentState { GST_STATE_NULL };
@@ -421,7 +424,6 @@ private:
 
     GstElement* createVideoSink();
     GstElement* createAudioSink();
-    GstElement* audioSink() const;
 
     friend class MediaPlayerFactoryGStreamer;
     static void getSupportedTypes(HashSet<String, ASCIICaseInsensitiveHash>&);
@@ -432,7 +434,7 @@ private:
     MediaTime playbackPosition() const;
 
     virtual void updateStates();
-    virtual void asyncStateChangeDone();
+    virtual void asyncStateChangeDone() { }
 
     void createGSTPlayBin(const URL&, const String& pipelineName);
 
@@ -465,6 +467,7 @@ private:
     void purgeOldDownloadFiles(const char*);
     static void uriDecodeBinElementAddedCallback(GstBin*, GstElement*, MediaPlayerPrivateGStreamer*);
     static void downloadBufferFileCreatedCallback(MediaPlayerPrivateGStreamer*);
+    void configureElement(GstElement*);
 
     void setPlaybinURL(const URL& urlString);
     void loadFull(const String& url, const String& pipelineName);
@@ -478,8 +481,6 @@ private:
     InitData parseInitDataFromProtectionMessage(GstMessage*);
     bool waitForCDMAttachment();
 #endif
-
-    static void elementSetupCallback(MediaPlayerPrivateGStreamer*, GstElement*, GstElement*);
 
     Atomic<bool> m_isPlayerShuttingDown;
 #if ENABLE(VIDEO_TRACK)
@@ -572,6 +573,9 @@ private:
     String m_errorMessage;
     bool m_didTryToRecoverPlayingState { false };
     bool m_visible { false };
+
+    uint64_t m_cachedTotalVideoFrames = 0;
+    uint64_t m_cachedDroppedVideoFrames = 0;
 };
 
 }

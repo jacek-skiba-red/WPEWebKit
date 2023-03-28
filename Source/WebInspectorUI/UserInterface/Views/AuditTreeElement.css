@@ -35,7 +35,7 @@
     height: 100%;
 }
 
-.tree-outline .item.audit:matches(.test-case, .test-group):not(.unsupported, .manager-active) > .status:hover > img {
+.tree-outline .item.audit:is(.test-case, .test-group):not(.unsupported, .manager-active) > .status:hover > img {
     width: 75%;
     height: 75%;
     margin: 0 auto;
@@ -54,7 +54,7 @@
     display: none;
 }
 
-.tree-outline .item.audit.unsupported:not(.selected) > :matches(.icon, .titles) {
+.tree-outline .item.audit.unsupported:not(.selected) > :is(.icon, .titles) {
     opacity: 0.5;
 }
 

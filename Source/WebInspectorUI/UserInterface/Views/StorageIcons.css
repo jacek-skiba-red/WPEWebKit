@@ -24,29 +24,29 @@
  */
 
 .application-cache-manifest .icon {
-    content: image-set(url(../Images/ApplicationCacheManifest.png) 1x, url(../Images/ApplicationCacheManifest@2x.png) 2x);
+    content: url(../Images/ApplicationCacheManifest.png);
 }
 
 .application-cache-frame .icon {
-    content: image-set(url(../Images/ApplicationCache.png) 1x, url(../Images/ApplicationCache@2x.png) 2x);
+    content: url(../Images/ApplicationCache.png);
 }
 
 .cookie-icon .icon {
-    content: image-set(url(../Images/Cookie.png) 1x, url(../Images/Cookie@2x.png) 2x);
+    content: url(../Images/Cookie.png);
 }
 
 .local-storage-icon .icon {
-    content: image-set(url(../Images/LocalStorage.png) 1x, url(../Images/LocalStorage@2x.png) 2x);
+    content: url(../Images/LocalStorage.png);
 }
 
 .session-storage-icon .icon {
-    content: image-set(url(../Images/SessionStorage.png) 1x, url(../Images/SessionStorage@2x.png) 2x);
+    content: url(../Images/SessionStorage.png);
 }
 
 .database-icon .icon {
-    content: image-set(url(../Images/Database.png) 1x, url(../Images/Database@2x.png) 2x);
+    content: url(../Images/Database.png);
 }
 
 .database-table-icon .icon {
-    content: image-set(url(../Images/DatabaseTable.png) 1x, url(../Images/DatabaseTable@2x.png) 2x);
+    content: url(../Images/DatabaseTable.png);
 }

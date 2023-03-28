@@ -77,6 +77,12 @@ DrawingAreaCoordinatedGraphics::DrawingAreaCoordinatedGraphics(WebPage& webPage,
             m_supportsAsyncScrolling = false;
     }
 #endif
+
+    // we're assuming ActivityState::IsInWindow is on by default
+    // thus if it's not - we need to trigger suspend immediately
+    if (!parameters.activityState.contains(ActivityState::IsInWindow)) {
+        activityStateDidChange(ActivityState::IsInWindow, -1, {});
+    }
 }
 
 DrawingAreaCoordinatedGraphics::~DrawingAreaCoordinatedGraphics() = default;

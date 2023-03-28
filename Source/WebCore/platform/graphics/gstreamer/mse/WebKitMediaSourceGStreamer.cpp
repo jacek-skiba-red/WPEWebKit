@@ -85,6 +85,22 @@ static Stream* getStreamByAppsrc(WebKitMediaSrc*, GstElement*);
 static void seekNeedsDataMainThread(WebKitMediaSrc*);
 static void notifyReadyForMoreSamplesMainThread(WebKitMediaSrc*, Stream*);
 
+static WebKitMediaSrcMainThreadNotification streamTypeToNotificationType(WebCore::MediaSourceStreamTypeGStreamer type)
+{
+    switch(type) {
+    case WebCore::Video:
+        return WebKitMediaSrcMainThreadNotification::VideoReadyForMoreSamples;
+    case WebCore::Audio:
+        return WebKitMediaSrcMainThreadNotification::AudioReadyForMoreSamples;
+    case WebCore::Text:
+        return WebKitMediaSrcMainThreadNotification::TextReadyForMoreSamples;
+    default:
+        break;
+    }
+    RELEASE_ASSERT_NOT_REACHED();
+    return WebKitMediaSrcMainThreadNotification::VideoReadyForMoreSamples;
+}
+
 static void enabledAppsrcNeedData(GstAppSrc* appsrc, guint, gpointer userData)
 {
     WebKitMediaSrc* webKitMediaSrc = static_cast<WebKitMediaSrc*>(userData);
@@ -135,16 +151,7 @@ static void enabledAppsrcNeedData(GstAppSrc* appsrc, guint, gpointer userData)
         appsrcStream = getStreamByAppsrc(webKitMediaSrc, GST_ELEMENT(appsrc));
 
         if (appsrcStream && appsrcStream->type != WebCore::Invalid) {
-            auto notificationType = [](WebCore::MediaSourceStreamTypeGStreamer type) {
-                switch(type) {
-                    case WebCore::Video: return WebKitMediaSrcMainThreadNotification::VideoReadyForMoreSamples;
-                    case WebCore::Audio: return WebKitMediaSrcMainThreadNotification::AudioReadyForMoreSamples;
-                    case WebCore::Text:  return WebKitMediaSrcMainThreadNotification::TextReadyForMoreSamples;
-                    default: break;
-                }
-                RELEASE_ASSERT_NOT_REACHED();
-                return WebKitMediaSrcMainThreadNotification::VideoReadyForMoreSamples;
-            }(appsrcStream->type);
+            auto notificationType = streamTypeToNotificationType(appsrcStream->type);
 
             webKitMediaSrc->priv->notifier->notify(notificationType, [webKitMediaSrc, appsrcStream] {
                 notifyReadyForMoreSamplesMainThread(webKitMediaSrc, appsrcStream);
@@ -162,6 +169,8 @@ static void enabledAppsrcEnoughData(GstAppSrc *appsrc, gpointer userData)
 
     WebKitMediaSrc* webKitMediaSrc = static_cast<WebKitMediaSrc*>(userData);
     ASSERT(WEBKIT_IS_MEDIA_SRC(webKitMediaSrc));
+    GST_OBJECT_LOCK(webKitMediaSrc);
+
     Stream* stream = getStreamByAppsrc(webKitMediaSrc, GST_ELEMENT(appsrc));
 
     // This callback might have been scheduled from a child thread before the stream was removed.
@@ -170,7 +179,11 @@ static void enabledAppsrcEnoughData(GstAppSrc *appsrc, gpointer userData)
     if (!stream || stream->type == WebCore::Invalid)
         return;
 
+    auto notificationType = streamTypeToNotificationType(stream->type);
+    webKitMediaSrc->priv->notifier->cancelPendingNotifications(notificationType);
     stream->sourceBuffer->setReadyForMoreSamples(false);
+
+    GST_OBJECT_UNLOCK(webKitMediaSrc);
 }
 
 static gboolean enabledAppsrcSeekData(GstAppSrc*, guint64, gpointer userData)
@@ -487,6 +500,41 @@ void webKitMediaSrcUpdatePresentationSize(GstCaps* caps, Stream* stream)
     GST_OBJECT_UNLOCK(stream->parent);
 }
 
+#if ENABLE(INSTANT_RATE_CHANGE)
+GstPadProbeReturn handleInstantRateChangeSeekProbe(GstPad* pad, GstPadProbeInfo* info, gpointer data)
+{
+    GstEvent *event = GST_PAD_PROBE_INFO_EVENT(info);
+    GstSegment *segment = reinterpret_cast<GstSegment*>(data);
+    switch ( GST_EVENT_TYPE(event) ) {
+        case GST_EVENT_SEEK:
+            // handled below
+            break;
+        case GST_EVENT_SEGMENT:
+            gst_event_copy_segment(event, segment);
+            FALLTHROUGH;
+        default:
+          return GST_PAD_PROBE_OK;
+    };
+    gdouble rate = 1.0;
+    GstSeekFlags flags = GST_SEEK_FLAG_NONE;
+    gst_event_parse_seek (event, &rate, nullptr, &flags, nullptr, nullptr, nullptr, nullptr);
+    if ( !!(flags & GST_SEEK_FLAG_INSTANT_RATE_CHANGE) ) {
+        gdouble rateMultiplier = rate / segment->rate;
+        GstEvent *rateChangeEvent =
+            gst_event_new_instant_rate_change(rateMultiplier, static_cast<GstSegmentFlags>(flags));
+        gst_event_set_seqnum (rateChangeEvent, gst_event_get_seqnum (event));
+        GstPad *peerPad = gst_pad_get_peer(pad);
+        GST_DEBUG("Sending to pad: %" GST_PTR_FORMAT ", event: %" GST_PTR_FORMAT, peerPad, rateChangeEvent);
+        if ( gst_pad_send_event (peerPad, rateChangeEvent) != TRUE )
+            GST_PAD_PROBE_INFO_FLOW_RETURN(info) = GST_FLOW_NOT_SUPPORTED;
+        gst_object_unref(peerPad);
+        gst_event_unref(event);
+        return GST_PAD_PROBE_HANDLED;
+    }
+    return GST_PAD_PROBE_OK;
+}
+#endif
+
 void webKitMediaSrcLinkStreamToSrcPad(GstPad* sourcePad, Stream* stream)
 {
     unsigned padId = static_cast<unsigned>(GPOINTER_TO_INT(g_object_get_data(G_OBJECT(sourcePad), "padId")));
@@ -502,6 +550,15 @@ void webKitMediaSrcLinkStreamToSrcPad(GstPad* sourcePad, Stream* stream)
 
     gst_pad_set_active(ghostpad, TRUE);
     gst_element_add_pad(GST_ELEMENT(stream->parent), ghostpad);
+
+#if ENABLE(INSTANT_RATE_CHANGE)
+    gst_pad_add_probe (
+        ghostpad,
+        GST_PAD_PROBE_TYPE_EVENT_UPSTREAM,
+        handleInstantRateChangeSeekProbe,
+        gst_segment_new(),
+        reinterpret_cast<GDestroyNotify>(gst_segment_free));
+#endif
 }
 
 void webKitMediaSrcLinkSourcePad(GstPad* sourcePad, GstCaps* caps, Stream* stream)

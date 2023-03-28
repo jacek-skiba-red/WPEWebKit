@@ -32,7 +32,7 @@
     overflow: hidden;
 }
 
-body:matches(.page, .web-page) .toolbar .dashboard-container {
+body:is(.page, .web-page) .toolbar .dashboard-container {
     width: 36vw;
     min-width: 350px;
 }

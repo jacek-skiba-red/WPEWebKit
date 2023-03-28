@@ -65,7 +65,7 @@
     content: url(../Images/Program.svg);
 }
 
-.profile > .data-grid tr:matches(.selected, :hover) .go-to-arrow {
+.profile > .data-grid tr:is(.selected, :hover) .go-to-arrow {
     float: none;
     display: inline-block;
     vertical-align: top;

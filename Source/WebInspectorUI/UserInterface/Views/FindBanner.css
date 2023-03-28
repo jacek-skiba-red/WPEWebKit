@@ -51,7 +51,7 @@
     transition-timing-function: ease-out;
 }
 
-.no-find-banner-transition:matches(.find-banner, .supports-find-banner) {
+.no-find-banner-transition:is(.find-banner, .supports-find-banner) {
     transition-duration: 0s !important;
 }
 
@@ -265,7 +265,7 @@ body[dir=rtl] .find-banner.console-find-banner > input[type="search"] {
     border-bottom-right-radius: var(--console-find-banner-search-box-border-radius-start);
 }
 
-.find-banner.console-find-banner > :matches(input[type="search"], button) {
+.find-banner.console-find-banner > :is(input[type="search"], button) {
     background-color: inherit;
     height: 22px;
 }

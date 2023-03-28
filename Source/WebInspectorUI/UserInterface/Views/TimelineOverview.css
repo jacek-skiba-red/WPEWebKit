@@ -27,21 +27,21 @@
     --timeline-sidebar-width: 197px;
 }
 
-body[dir=ltr] .timeline-overview > :matches(.navigation-bar.timelines, .tree-outline.timelines) {
+body[dir=ltr] .timeline-overview > :is(.navigation-bar.timelines, .tree-outline.timelines) {
     left: 0;
     border-right: 1px solid var(--border-color);
 }
 
-body[dir=rtl] .timeline-overview > :matches(.navigation-bar.timelines, .tree-outline.timelines) {
+body[dir=rtl] .timeline-overview > :is(.navigation-bar.timelines, .tree-outline.timelines) {
     right: 0;
     border-left: 1px solid var(--border-color);
 }
 
-body[dir=ltr] .timeline-overview:not(.frames) > :matches(.scroll-container, .timeline-ruler, .graphs-container) {
+body[dir=ltr] .timeline-overview:not(.frames) > :is(.scroll-container, .timeline-ruler, .graphs-container) {
     left: var(--timeline-sidebar-width);
 }
 
-body[dir=rtl] .timeline-overview:not(.frames) > :matches(.scroll-container, .timeline-ruler, .graphs-container) {
+body[dir=rtl] .timeline-overview:not(.frames) > :is(.scroll-container, .timeline-ruler, .graphs-container) {
     right: var(--timeline-sidebar-width);
 }
 
@@ -57,11 +57,11 @@ body[dir=rtl] .timeline-overview:not(.frames) > :matches(.scroll-container, .tim
     border-bottom: 1px solid var(--border-color);
 }
 
-.navigation-bar.timelines .item.button.toggle-edit-instruments:not(.disabled):matches(:focus, .activate.activated, .radio.selected) {
+.navigation-bar.timelines .item.button.toggle-edit-instruments:not(.disabled):is(:focus, .activate.activated, .radio.selected) {
     color: var(--glyph-color-active);
 }
 
-.navigation-bar.timelines .item.button.toggle-edit-instruments:not(.disabled):active:matches(:focus, .activate.activated, .radio.selected) {
+.navigation-bar.timelines .item.button.toggle-edit-instruments:not(.disabled):active:is(:focus, .activate.activated, .radio.selected) {
     color: var(--glyph-color-active-pressed);
 }
 
@@ -139,7 +139,7 @@ body.window-inactive .timeline-overview > .tree-outline.timelines .item.selected
     z-index: calc(var(--z-index-resizer) + 1);
 }
 
-.timeline-overview.frames > :matches(.tree-outline.timelines, .navigation-bar.timelines) {
+.timeline-overview.frames > :is(.tree-outline.timelines, .navigation-bar.timelines) {
     display: none;
 }
 

@@ -506,19 +506,14 @@ void webkit_cookie_manager_delete_all_cookies(WebKitCookieManager* manager)
 void webkit_cookie_manager_set_cookie_jar(WebKitCookieManager* manager, GList* cookies, GCancellable* cancellable, GAsyncReadyCallback callback, gpointer userData)
 {
     g_return_if_fail(WEBKIT_IS_COOKIE_MANAGER(manager));
-    g_return_if_fail(cookies);
-
-    size_t cookiesLen = (size_t)g_list_length(cookies);
-    g_return_if_fail(cookiesLen != 0);
-
-    GRefPtr<GTask> task = adoptGRef(g_task_new(manager, cancellable, callback, userData));
 
     Vector<WebCore::Cookie> webCookies;
-    webCookies.reserveInitialCapacity(cookiesLen);
+    webCookies.reserveInitialCapacity(g_list_length(cookies));
     for (GList* it = cookies; it != NULL; it = g_list_next(it)) {
         webCookies.append(WebCore::Cookie((SoupCookie*)it->data));
     }
 
+    GRefPtr<GTask> task = adoptGRef(g_task_new(manager, cancellable, callback, userData));
     const auto& processPools = webkitWebsiteDataManagerGetProcessPools(manager->priv->dataManager);
     processPools[0]->supplement<WebCookieManagerProxy>()->setCookieJar(manager->priv->sessionID(), webCookies, [task = WTFMove(task)]() {
         g_task_return_boolean(task.get(), TRUE);

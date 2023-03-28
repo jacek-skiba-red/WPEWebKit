@@ -86,11 +86,11 @@ body[dir=rtl] .spring-editor > .spring-timing::before {
     right: var(--spring-editor-timing-pseudo-offset-end);
 }
 
-.spring-editor > :matches(.spring-preview, .spring-timing) > div {
+.spring-editor > :is(.spring-preview, .spring-timing) > div {
     transition-property: none;
 }
 
-.spring-editor > .animate:matches(.spring-preview, .spring-timing) > div {
+.spring-editor > .animate:is(.spring-preview, .spring-timing) > div {
     transition-property: transform;
 }
 

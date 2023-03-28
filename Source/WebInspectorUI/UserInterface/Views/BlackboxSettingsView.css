@@ -23,7 +23,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-.settings-view.blackbox > :matches(p, table) {
+.settings-view.blackbox > :is(p, table) {
     width: 100%;
     max-width: calc(min(50em, 100% - 40px));
     margin: 1em auto 2em;
@@ -64,7 +64,7 @@
     border: 1px solid var(--border-color);
 }
 
-.settings-view.blackbox > table :matches(th, td).url {
+.settings-view.blackbox > table :is(th, td).url {
     text-align: start;
 }
 
@@ -78,7 +78,7 @@
     background-color: transparent;
 }
 
-.settings-view.blackbox > table :matches(th, td):matches(.case-sensitive, .remove-blackbox) {
+.settings-view.blackbox > table :is(th, td):is(.case-sensitive, .remove-blackbox) {
     width: 1px;
     white-space: nowrap;
     text-align: center;

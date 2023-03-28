@@ -76,6 +76,7 @@
 #include <webkit2/WebKitURIRequest.h>
 #include <webkit2/WebKitURIResponse.h>
 #include <webkit2/WebKitURISchemeRequest.h>
+#include <webkit2/WebKitURISchemeResponse.h>
 #include <webkit2/WebKitURIUtilities.h>
 #include <webkit2/WebKitUserContent.h>
 #include <webkit2/WebKitUserContentFilterStore.h>

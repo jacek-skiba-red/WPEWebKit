@@ -48,6 +48,24 @@ public:
         bool isUsingHardware;
 
         operator bool() const { return isSupported; }
+
+        static RegistryLookupResult merge(const RegistryLookupResult& a, const RegistryLookupResult& b)
+        {
+            return RegistryLookupResult {
+                a.isSupported && b.isSupported,
+                a.isSupported && b.isSupported && a.isUsingHardware && b.isUsingHardware
+            };
+        }
+
+        friend bool operator==(const RegistryLookupResult& lhs, const RegistryLookupResult& rhs)
+        {
+            return lhs.isSupported == rhs.isSupported && lhs.isUsingHardware == rhs.isUsingHardware;
+        }
+
+        friend bool operator!=(const RegistryLookupResult& lhs, const RegistryLookupResult& rhs)
+        {
+            return !(lhs == rhs);
+        }
     };
     RegistryLookupResult isDecodingSupported(MediaConfiguration&) const;
 

@@ -58,6 +58,7 @@
 #include <limits>
 #include <wtf/CheckedArithmetic.h>
 #include <wtf/IsoMallocInlines.h>
+#include <wtf/StringPrintStream.h>
 #include <wtf/WeakPtr.h>
 
 namespace WebCore {
@@ -76,7 +77,7 @@ static inline MediaTime roundTowardsTimeScaleWithRoundingMargin(const MediaTime&
     }
 };
 
-static const double ExponentialMovingAverageCoefficient = 0.1;
+static const double ExponentialMovingAverageCoefficient = 0.2;
 
 // Do not enqueue samples spanning a significant unbuffered gap.
 // NOTE: one second is somewhat arbitrary. MediaSource::monitorSourceBuffers() is run
@@ -86,6 +87,9 @@ static const double ExponentialMovingAverageCoefficient = 0.1;
 // new current time without triggering this early return.
 // FIXME(135867): Make this gap detection logic less arbitrary.
 static const MediaTime discontinuityTolerance = MediaTime(1, 1);
+
+static const unsigned evictionAlgorithmInitialTimeChunk = 30000;
+static const unsigned evictionAlgorithmTimeChunkLowThreshold = 3000;
 
 struct SourceBuffer::TrackBuffer {
     MediaTime lastDecodeTimestamp;
@@ -138,7 +142,7 @@ SourceBuffer::SourceBuffer(Ref<SourceBufferPrivate>&& sourceBufferPrivate, Media
     , m_groupEndTimestamp(MediaTime::zeroTime())
     , m_buffered(TimeRanges::create())
     , m_appendState(WaitingForSegment)
-    , m_timeOfBufferingMonitor(MonotonicTime::now())
+    , m_timeOfBufferingMonitor(MonotonicTime::fromRawSeconds(0))
     , m_pendingRemoveStart(MediaTime::invalidTime())
     , m_pendingRemoveEnd(MediaTime::invalidTime())
     , m_removeTimer(*this, &SourceBuffer::removeTimerFired)
@@ -273,6 +277,7 @@ ExceptionOr<void> SourceBuffer::setAppendWindowEnd(double newValue)
 
 ExceptionOr<void> SourceBuffer::appendBuffer(const BufferSource& data)
 {
+    monitorBufferingRate();
     return appendBufferInternal(static_cast<const unsigned char*>(data.data()), data.length());
 }
 
@@ -595,6 +600,8 @@ ExceptionOr<void> SourceBuffer::appendBufferInternal(const unsigned char* data, 
     if (isRemoved() || m_updating)
         return Exception { InvalidStateError };
 
+    DEBUG_LOG(LOGIDENTIFIER, "size = ", size, ", buffered = ", m_buffered->ranges());
+
     // 3. If the readyState attribute of the parent media source is in the "ended" state then run the following steps:
     // 3.1. Set the readyState attribute of the parent media source to "open"
     // 3.2. Queue a task to fire a simple event named sourceopen at the parent media source .
@@ -701,6 +708,7 @@ void SourceBuffer::sourceBufferPrivateAppendComplete(AppendResult result)
 
     if (m_source)
         m_source->monitorSourceBuffers();
+    monitorBufferingRate();
 
     MediaTime currentMediaTime = m_source->currentTime();
     for (auto& trackBufferPair : m_trackBufferMap) {
@@ -718,7 +726,7 @@ void SourceBuffer::sourceBufferPrivateAppendComplete(AppendResult result)
     if (extraMemoryCost() > this->maximumBufferSize())
         m_bufferFull = true;
 
-    DEBUG_LOG(LOGIDENTIFIER);
+    DEBUG_LOG(LOGIDENTIFIER, "buffered = ", m_buffered->ranges());
 }
 
 void SourceBuffer::sourceBufferPrivateDidReceiveRenderingError(int error)
@@ -821,6 +829,20 @@ static PlatformTimeRanges removeSamplesFromTrackBuffer(const DecodeOrderSampleMa
     return erasedRanges;
 }
 
+MediaTime SourceBuffer::findPreviousSyncSamplePresentationTime(const MediaTime& time)
+{
+    MediaTime previousSyncSamplePresentationTime = time;
+    for (auto& trackBuffer : m_trackBufferMap.values()) {
+        auto sampleIterator = trackBuffer.samples.decodeOrder().findSyncSamplePriorToPresentationTime(time);
+        if (sampleIterator == trackBuffer.samples.decodeOrder().rend())
+            continue;
+        const MediaTime& samplePresentationTime = sampleIterator->first.second;
+        if (samplePresentationTime < time)
+            previousSyncSamplePresentationTime = samplePresentationTime;
+    }
+    return previousSyncSamplePresentationTime;
+}
+
 void SourceBuffer::removeCodedFrames(const MediaTime& start, const MediaTime& end)
 {
     DEBUG_LOG(LOGIDENTIFIER, "start = ", start, ", end = ", end);
@@ -915,7 +937,9 @@ void SourceBuffer::removeCodedFrames(const MediaTime& start, const MediaTime& en
     updateBufferedFromTrackBuffers();
 
     // 4. If buffer full flag equals true and this object is ready to accept more bytes, then set the buffer full flag to false.
-    // No-op
+    if (m_bufferFull && extraMemoryCost() < maximumBufferSize()) {
+        m_bufferFull = false;
+    }
 
     LOG(Media, "SourceBuffer::removeCodedFrames(%p) - buffered = %s", this, toString(m_buffered->ranges()).utf8().data());
 
@@ -965,93 +989,101 @@ void SourceBuffer::evictCodedFrames(size_t newDataSize)
 
     size_t maximumBufferSize = this->maximumBufferSize();
 
+    // Check if app has removed enough already.
+    if (extraMemoryCost() + newDataSize < maximumBufferSize) {
+        m_bufferFull = false;
+        return;
+    }
+
     // 3. Let removal ranges equal a list of presentation time ranges that can be evicted from
     // the presentation to make room for the new data.
 
-    // NOTE: begin by removing data from the beginning of the buffered ranges, 30 seconds at
-    // a time, up to 30 seconds before currentTime.
-    MediaTime thirtySeconds = MediaTime(30, 1);
+    // NOTE: begin by removing data from the beginning of the buffered ranges, timeChunk seconds at
+    // a time, up to timeChunk seconds before currentTime.
     MediaTime currentTime = m_source->currentTime();
-    MediaTime maximumRangeEnd = currentTime - thirtySeconds;
 
 #if !RELEASE_LOG_DISABLED
     DEBUG_LOG(LOGIDENTIFIER, "currentTime = ", m_source->currentTime(), ", require ", extraMemoryCost() + newDataSize, " bytes, maximum buffer size is ", maximumBufferSize);
     size_t initialBufferedSize = extraMemoryCost();
 #endif
 
-    MediaTime rangeStart = MediaTime::zeroTime();
-    MediaTime rangeEnd = std::max(m_buffered->ranges().start(0), rangeStart + thirtySeconds);
-    while (rangeStart < maximumRangeEnd) {
-        // 4. For each range in removal ranges, run the coded frame removal algorithm with start and
-        // end equal to the removal range start and end timestamp respectively.
-        removeCodedFrames(rangeStart, std::min(rangeEnd, maximumRangeEnd));
-        if (extraMemoryCost() + newDataSize < maximumBufferSize) {
-            m_bufferFull = false;
-            break;
-        }
+    const auto& buffered = m_buffered->ranges();
 
-        rangeStart += thirtySeconds;
-        rangeEnd += thirtySeconds;
-    }
+    // FIXME: All this is nice but we should take into account negative playback rate and begin from after current time
+    // and be more conservative with before current time.
 
-#if !RELEASE_LOG_DISABLED
+    unsigned timeChunkAsMilliseconds = evictionAlgorithmInitialTimeChunk;
+    do {
+        const MediaTime timeChunk = MediaTime(timeChunkAsMilliseconds, 1000);
+        const MediaTime maximumRangeEnd = std::min(currentTime - timeChunk, findPreviousSyncSamplePresentationTime(currentTime));
+
+        do {
+            MediaTime rangeStart = buffered.minimumBufferedTime();
+            MediaTime rangeEnd = std::min(rangeStart + timeChunk, maximumRangeEnd);
+
+            if (rangeStart >= rangeEnd)
+                break;
+
+            // 4. For each range in removal ranges, run the coded frame removal algorithm with start and
+            // end equal to the removal range start and end timestamp respectively.
+            removeCodedFrames(rangeStart, rangeEnd);
+            MediaTime newRangeStart = buffered.minimumBufferedTime();
+            if (newRangeStart == rangeStart)
+                break;
+
+            if (extraMemoryCost() + newDataSize < maximumBufferSize)
+                m_bufferFull = false;
+        } while (m_bufferFull);
+
+        timeChunkAsMilliseconds /= 2;
+    } while (m_bufferFull && timeChunkAsMilliseconds >= evictionAlgorithmTimeChunkLowThreshold);
+
     if (!m_bufferFull) {
         DEBUG_LOG(LOGIDENTIFIER, "evicted ", initialBufferedSize - extraMemoryCost());
         return;
     }
-#endif
 
-    // If there still isn't enough free space and there buffers in time ranges after the current range (ie. there is a gap after
-    // the current buffered range), delete 30 seconds at a time from duration back to the current time range or 30 seconds after
-    // currenTime whichever we hit first.
-    auto buffered = m_buffered->ranges();
-    size_t currentTimeRange = buffered.find(currentTime);
-    if (currentTimeRange == buffered.length() - 1) {
-#if !RELEASE_LOG_DISABLED
-        ERROR_LOG(LOGIDENTIFIER, "FAILED to free enough after evicting ", initialBufferedSize - extraMemoryCost());
-#endif
+    timeChunkAsMilliseconds = evictionAlgorithmInitialTimeChunk;
+    do {
+        const MediaTime timeChunk = MediaTime(timeChunkAsMilliseconds, 1000);
+        const MediaTime minimumRangeStart = currentTime + timeChunk;
+
+        do {
+            MediaTime rangeEnd = buffered.maximumBufferedTime();
+            MediaTime rangeStart = std::max(minimumRangeStart, rangeEnd - timeChunk);
+
+            if (rangeStart >= rangeEnd)
+                break;
+
+            // Do not evict data from the time range that contains currentTime.
+            size_t currentTimeRange = buffered.find(currentTime);
+            size_t startTimeRange = buffered.find(rangeStart);
+            if (currentTimeRange != notFound && startTimeRange == currentTimeRange) {
+                size_t endTimeRange = buffered.find(rangeEnd);
+                if (endTimeRange == currentTimeRange)
+                    break;
+            }
+
+            // 4. For each range in removal ranges, run the coded frame removal algorithm with start and
+            // end equal to the removal range start and end timestamp respectively.
+            removeCodedFrames(rangeStart, rangeEnd);
+            MediaTime newRangeEnd = buffered.maximumBufferedTime();
+            if (newRangeEnd == rangeEnd)
+                break;
+
+            if (extraMemoryCost() + newDataSize < maximumBufferSize)
+                m_bufferFull = false;
+        } while (m_bufferFull);
+
+        timeChunkAsMilliseconds /= 2;
+    } while (m_bufferFull && timeChunkAsMilliseconds >= evictionAlgorithmTimeChunkLowThreshold);
+
+    if (!m_bufferFull) {
+        DEBUG_LOG(LOGIDENTIFIER, "evicted ", initialBufferedSize - extraMemoryCost());
         return;
     }
 
-    MediaTime minimumRangeStart = currentTime + thirtySeconds;
-
-    rangeEnd = m_source->duration();
-    if (!rangeEnd.isFinite()) {
-        rangeEnd = buffered.maximumBufferedTime();
-        DEBUG_LOG(LOGIDENTIFIER, "MediaSource duration is not a finite value, using maximum buffered time: ", rangeEnd);
-    }
-
-    rangeStart = rangeEnd - thirtySeconds;
-    while (rangeStart > minimumRangeStart) {
-
-        // Do not evict data from the time range that contains currentTime.
-        size_t startTimeRange = buffered.find(rangeStart);
-        if (currentTimeRange != notFound && startTimeRange == currentTimeRange) {
-            size_t endTimeRange = buffered.find(rangeEnd);
-            if (currentTimeRange != notFound && endTimeRange == currentTimeRange)
-                break;
-
-            rangeEnd = buffered.start(endTimeRange);
-        }
-
-        // 4. For each range in removal ranges, run the coded frame removal algorithm with start and
-        // end equal to the removal range start and end timestamp respectively.
-        removeCodedFrames(std::max(minimumRangeStart, rangeStart), rangeEnd);
-        if (extraMemoryCost() + newDataSize < maximumBufferSize) {
-            m_bufferFull = false;
-            break;
-        }
-
-        rangeStart -= thirtySeconds;
-        rangeEnd -= thirtySeconds;
-    }
-
-#if !RELEASE_LOG_DISABLED
-    if (m_bufferFull)
-        ERROR_LOG(LOGIDENTIFIER, "FAILED to free enough after evicting ", initialBufferedSize - extraMemoryCost());
-    else
-        DEBUG_LOG(LOGIDENTIFIER, "evicted ", initialBufferedSize - extraMemoryCost());
-#endif
+    ERROR_LOG(LOGIDENTIFIER, "FAILED to free enough after evicting ", initialBufferedSize - extraMemoryCost());
 }
 
 size_t SourceBuffer::maxBufferSizeVideo = 0;
@@ -1804,8 +1836,11 @@ void SourceBuffer::sourceBufferPrivateDidReceiveSample(MediaSample& sample)
                     break;
 
                 MediaTime highestBufferedTime = trackBuffer.buffered.maximumBufferedTime();
-                MediaTime eraseBeginTime = trackBuffer.highestPresentationTimestamp - contiguousFrameTolerance;
+                MediaTime eraseBeginTime = trackBuffer.highestPresentationTimestamp;
                 MediaTime eraseEndTime = frameEndTimestamp - contiguousFrameTolerance;
+
+                if (eraseEndTime <= eraseBeginTime)
+                    break;
 
                 PresentationOrderSampleMap::iterator_range range;
                 if (highestBufferedTime - trackBuffer.highestPresentationTimestamp < trackBuffer.lastFrameDuration)
@@ -2264,6 +2299,12 @@ void SourceBuffer::didDropSample()
 
 void SourceBuffer::monitorBufferingRate()
 {
+    // We avoid the first update of m_averageBufferRate on purpose, but in exchange we get a more accurate m_timeOfBufferingMonitor initial time.
+    if (!m_timeOfBufferingMonitor) {
+        m_timeOfBufferingMonitor = MonotonicTime::now();
+        return;
+    }
+
     MonotonicTime now = MonotonicTime::now();
     Seconds interval = now - m_timeOfBufferingMonitor;
     double rateSinceLastMonitor = m_bufferedSinceLastMonitor / interval.seconds();

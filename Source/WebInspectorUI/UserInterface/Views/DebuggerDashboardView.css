@@ -130,7 +130,7 @@ body.window-inactive .dashboard.debugger .navigation-bar .item.button > .glyph {
     height: 16px;
 }
 
-.dashboard.debugger > .location :matches(.function-icon, .event-listener-icon) {
+.dashboard.debugger > .location :is(.function-icon, .event-listener-icon) {
     -webkit-margin-end: 5px;
 }
 

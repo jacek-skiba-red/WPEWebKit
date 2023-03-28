@@ -248,13 +248,14 @@ MemoryPressureHandler::MemoryUsagePoller::MemoryUsagePoller()
             bool critical = false;
             bool synchronous = false;
             size_t value = 0;
+            size_t value_swap = 0;
 
             if (s_pollMaximumProcessMemoryCriticalLimit) {
-                if (readToken(s_processStatus, "VmRSS:", KB, value)) {
-                    if (value > s_pollMaximumProcessMemoryNonCriticalLimit) {
+                if (readToken(s_processStatus, "VmRSS:", KB, value) && readToken(s_processStatus, "VmSwap:", KB, value_swap)) {
+                    if (value + value_swap > s_pollMaximumProcessMemoryNonCriticalLimit) {
                         underMemoryPressure = true;
-                        critical = value > s_pollMaximumProcessMemoryCriticalLimit;
-                        synchronous = value > s_pollMaximumProcessMemoryCriticalLimit * 1.05;
+                        critical = value + value_swap > s_pollMaximumProcessMemoryCriticalLimit;
+                        synchronous = value + value_swap > s_pollMaximumProcessMemoryCriticalLimit * 1.05;
                     }
                 }
             }

@@ -48,6 +48,7 @@ public:
     MediaTime end(unsigned index, bool& valid) const;
     MediaTime duration(unsigned index) const;
     MediaTime maximumBufferedTime() const;
+    MediaTime minimumBufferedTime() const;
 
     void invert();
     void intersectWith(const PlatformTimeRanges&);
@@ -67,6 +68,7 @@ public:
     MediaTime totalDuration() const;
 
     void dump(WTF::PrintStream&) const;
+    String toString() const;
 
     template<class Encoder> void encode(Encoder&) const;
     template<class Decoder> static Optional<PlatformTimeRanges> decode(Decoder&);
@@ -161,5 +163,14 @@ Optional<PlatformTimeRanges> PlatformTimeRanges::decode(Decoder& decoder)
 }
 
 } // namespace WebCore
+
+namespace WTF {
+template<typename> struct LogArgument;
+
+template<> struct LogArgument<WebCore::PlatformTimeRanges> {
+    static String toString(const WebCore::PlatformTimeRanges& platformTimeRanges) { return platformTimeRanges.toString(); }
+};
+
+} // namespace WTF
 
 #endif

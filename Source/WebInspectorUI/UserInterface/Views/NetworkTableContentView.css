@@ -103,7 +103,7 @@ body[dir=rtl] .network-table .cell.dom-node.name .disclosure {
     color: hsla(0, 0%, 100%, 0.9);
 }
 
-.network-table li:not(.selected) .cell:matches(.cache-type, .multiple) {
+.network-table li:not(.selected) .cell:is(.cache-type, .multiple) {
     color: var(--text-color-gray-medium);
 }
 
@@ -256,8 +256,8 @@ body[dir=rtl] .waterfall .block {
     --end-radius: 0;
 }
 
-.network-table .waterfall .block:matches(.mouse-tracking, .filler) + .block:not(.mouse-tracking, .filler),
-.network-table .waterfall .block:not(.request, .response) + :matches(.request, .response) {
+.network-table .waterfall .block:is(.mouse-tracking, .filler) + .block:not(.mouse-tracking, .filler),
+.network-table .waterfall .block:not(.request, .response) + :is(.request, .response) {
     --start-radius: 2px;
 }
 

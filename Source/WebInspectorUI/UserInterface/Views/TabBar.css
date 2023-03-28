@@ -331,7 +331,7 @@ body:not(.window-inactive) .tab-bar.single-tab > .item.default-tab:hover > .clos
     transition-timing-function: ease-in-out;
 }
 
-.tab-bar.animating:matches(.expanding-tabs, .inserting-tab) > .item {
+.tab-bar.animating:is(.expanding-tabs, .inserting-tab) > .item {
     transition-property: left, width;
     transition-duration: 250ms;
     transition-timing-function: ease-in-out;

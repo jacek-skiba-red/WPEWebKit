@@ -553,12 +553,12 @@ public:
 private:
     PendingImageBitmap(ScriptExecutionContext& scriptExecutionContext, RefPtr<Blob>&& blob, ImageBitmapOptions&& options, Optional<IntRect> rect, ImageBitmap::Promise&& promise)
         : ActiveDOMObject(&scriptExecutionContext)
-        , m_blobLoader(FileReaderLoader::ReadAsArrayBuffer, this)
         , m_blob(WTFMove(blob))
         , m_options(WTFMove(options))
         , m_rect(WTFMove(rect))
         , m_promise(WTFMove(promise))
         , m_createImageBitmapTimer(&scriptExecutionContext, *this, &PendingImageBitmap::createImageBitmapAndResolvePromise)
+        , m_blobLoader(FileReaderLoader::ReadAsArrayBuffer, this)
     {
         suspendIfNeeded();
         m_createImageBitmapTimer.suspendIfNeeded();
@@ -622,13 +622,13 @@ private:
         ImageBitmap::createFromBuffer(m_arrayBufferToProcess.releaseNonNull(), m_blob->type(), m_blob->size(), m_blobLoader.url(), WTFMove(m_options), WTFMove(m_rect), WTFMove(m_promise));
     }
 
-    FileReaderLoader m_blobLoader;
     RefPtr<Blob> m_blob;
     ImageBitmapOptions m_options;
     Optional<IntRect> m_rect;
     ImageBitmap::Promise m_promise;
     SuspendableTimer m_createImageBitmapTimer;
     RefPtr<ArrayBuffer> m_arrayBufferToProcess;
+    FileReaderLoader m_blobLoader;
 };
 
 void ImageBitmap::createFromBuffer(

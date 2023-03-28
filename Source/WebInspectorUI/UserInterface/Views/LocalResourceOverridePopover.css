@@ -69,7 +69,7 @@
     width: 324px;
 }
 
-.popover .local-resource-override-popover-content label:matches(.is-case-sensitive, .is-regex) {
+.popover .local-resource-override-popover-content label:is(.is-case-sensitive, .is-regex) {
     display: inline-block;
 }
 
@@ -90,7 +90,7 @@
     -webkit-margin-start: 12px;
 }
 
-.popover .local-resource-override-popover-content .data-grid tr.header-content-type > :matches(.name-column, .value-column) {
+.popover .local-resource-override-popover-content .data-grid tr.header-content-type > :is(.name-column, .value-column) {
     opacity: 0.5;
 }
 

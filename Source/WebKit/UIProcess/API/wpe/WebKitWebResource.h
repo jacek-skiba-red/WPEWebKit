@@ -78,6 +78,9 @@ webkit_web_resource_get_data_finish (WebKitWebResource  *resource,
                                      gsize              *length,
                                      GError            **error);
 
+WEBKIT_API gboolean
+webkit_web_resource_belongs_to_main_frame (WebKitWebResource *resource);
+
 G_END_DECLS
 
 #endif

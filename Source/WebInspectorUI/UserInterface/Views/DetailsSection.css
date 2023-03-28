@@ -171,7 +171,7 @@ body[dir=rtl] .details-section > .header::before {
     background-color: hsl(0, 0%, 97%);
 }
 
-.details-section > .content > .group:nth-child(even) > .row:matches(.simple:first-child > *, :not(.simple):first-child) {
+.details-section > .content > .group:nth-child(even) > .row:is(.simple:first-child > *, :not(.simple):first-child) {
     border-top: 1px solid var(--border-color);
 }
 
@@ -239,7 +239,7 @@ body[dir=rtl] .details-section > .header::before {
     word-break: break-all;
 }
 
-.details-section > .content > .group > .row:matches(.empty, .text) {
+.details-section > .content > .group > .row:is(.empty, .text) {
     padding: 0 6px 7px 6px;
     text-align: center;
     color: gray;
@@ -310,7 +310,7 @@ body[dir=rtl] .details-section > .header::before {
         background-color: unset;
     }
 
-    .details-section > .content > .group > .row:matches(.empty, .text) {
+    .details-section > .content > .group > .row:is(.empty, .text) {
         color: var(--text-color-secondary);
     }
 }

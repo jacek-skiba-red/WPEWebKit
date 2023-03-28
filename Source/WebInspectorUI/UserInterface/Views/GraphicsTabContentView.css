@@ -31,7 +31,7 @@
     content: url(../Images/Canvas2D.svg);
 }
 
-.content-view.tab.graphics .navigation-bar > .item .canvas:matches(.webgl, .webgl2, .webgpu, .webmetal) .icon {
+.content-view.tab.graphics .navigation-bar > .item .canvas:is(.webgl, .webgl2, .webgpu, .webmetal) .icon {
     content: url(../Images/Canvas3D.svg);
 }
 
@@ -40,7 +40,7 @@
 }
 
 .content-view.tab.graphics .navigation-bar > .item .shader-program > .icon {
-    content: image-set(url(../Images/DocumentGL.png) 1x, url(../Images/DocumentGL@2x.png) 2x);
+    content: url(../Images/DocumentGL.png);
 }
 
 @media (prefers-color-scheme: dark) {

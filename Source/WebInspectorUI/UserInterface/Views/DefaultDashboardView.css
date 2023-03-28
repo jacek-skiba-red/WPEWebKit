@@ -23,11 +23,11 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-body:matches(.page, .web-page) .toolbar.collapsed .dashboard.default > :matches(.resourcesSize, .time, .logs) {
+body:is(.page, .web-page) .toolbar.collapsed .dashboard.default > :is(.resourcesSize, .time, .logs) {
     display: none;
 }
 
-body:not(.page, .web-page) .toolbar .dashboard.default > :matches(.resourcesCount, .resourcesSize, .time) {
+body:not(.page, .web-page) .toolbar .dashboard.default > :is(.resourcesCount, .resourcesSize, .time) {
     display: none;
 }
 
@@ -57,7 +57,7 @@ body:not(.page, .web-page) .toolbar .dashboard.default > :matches(.resourcesCoun
     font-variant-numeric: tabular-nums;
 }
 
-.toolbar .dashboard.default > :matches(.time, .resourcesSize) {
+.toolbar .dashboard.default > :is(.time, .resourcesSize) {
     min-width: 70px;
 }
 

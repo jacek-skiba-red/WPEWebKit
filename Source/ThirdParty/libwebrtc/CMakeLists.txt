@@ -1638,3 +1638,14 @@ target_include_directories(libsrtp PRIVATE
     Source/third_party/libsrtp/crypto/include
     Source/third_party/libsrtp/include
 )
+
+if (USE_WPEWEBKIT_PLATFORM_BROADCOM)
+    target_compile_definitions(webrtc PRIVATE
+        WTF_PLATFORM_BROADCOM=1
+    )
+endif()
+if (USE_WPEWEBKIT_PLATFORM_REALTEK)
+    target_compile_definitions(webrtc PRIVATE
+        WTF_PLATFORM_REALTEK=1
+    )
+endif()

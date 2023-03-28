@@ -49,6 +49,14 @@ WI.Popover = class Popover extends WI.Object
         this._container.className = "container";
 
         this._drawBackgroundAnimationIdentifier = undefined;
+
+        // Background canvas
+        this.canvas = document.createElement("canvas");
+        this._element.appendChild(this.canvas);
+        this.canvas.style.position = "absolute";
+        this.canvas.style.top = 0;
+        this.canvas.style.left = 0;
+        this.canvas.style.zIndex = -1;
     }
 
     // Public
@@ -422,7 +430,10 @@ WI.Popover = class Popover extends WI.Object
         bounds = bounds.inset(WI.Popover.ShadowEdgeInsets);
         let computedStyle = window.getComputedStyle(this._element, null);
 
-        let context = document.getCSSCanvasContext("2d", "popover", scaledWidth, scaledHeight);
+        this.canvas.width = scaledWidth;
+        this.canvas.height = scaledHeight;
+
+        let context = this.canvas.getContext("2d");
         context.clearRect(0, 0, scaledWidth, scaledHeight);
 
         function isolate(callback) {

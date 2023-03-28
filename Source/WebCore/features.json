@@ -19,6 +19,7 @@
         "url": "https://www.w3.org/TR/clipboard-apis/#async-clipboard-api",
         "category": "webapps",
         "description": "An API that allows reading from and writing to the system clipboard.",
+        "webkit-url": "webkit.org/b/211979",
         "contact": {
             "name": "Wenson Hsieh",
             "email": "wenson_hsieh@apple.com",
@@ -219,11 +220,12 @@
     {
         "name": "CSS Scroll Snap Points Module Level 1",
         "status": {
-            "status": "Supported",
-            "enabled-by-default": true
+            "status": "In development",
+            "enabled-by-default": false
         },
         "url": "http://dev.w3.org/csswg/css-snappoints/",
-        "webkit-url": "https://bugs.webkit.org/show_bug.cgi?id=134283",
+        "description": "Supported first in WPE 2.34.",
+        "webkit-url": "https://bugs.webkit.org/show_bug.cgi?id=203684",
         "keywords": ["css scroll snap points", "scroll snap", "snap points"],
         "category": "css",
         "contact": {
@@ -352,9 +354,10 @@
     {
         "name": "DeviceOrientation Events",
         "status": {
-            "status": "Supported",
-            "enabled-by-default": true
+            "status": "In Development",
+            "enabled-by-default": false
         },
+        "webkit-url": "https://bugs.webkit.org/show_bug.cgi?id=242637",
         "description": "DOM events that provide information about the physical orientation and motion of a hosting device.",
         "url": "https://w3c.github.io/deviceorientation/spec-source-orientation.html",
         "keywords": ["device orientation", "devicemotion", "acceleration", "rotation"],
@@ -401,13 +404,13 @@
     {
         "name": "Gamepad",
         "status": {
-            "status": "Supported"
+            "status": "In development"
         },
         "url": "https://www.w3.org/TR/gamepad/",
-        "webkit-url": "https://webkit.org/b/134076",
+        "webkit-url": "https://github.com/WebKit/WebKit/commit/ab0e24752e11bbdb584662dcd5369ce17f4da1de",
         "keywords": ["gamepad", "gaming", "games", "controller"],
         "category": "webapps",
-        "description": "An interface for accessing and responding to game controller device state.",
+        "description": "An interface for accessing and responding to game controller device state. Support enabled in upstream WPE main branch.",
         "contact": {
             "name": "Jonathan Davis",
             "email": "web-evangelist@apple.com",
@@ -474,7 +477,7 @@
         "status": {
             "status": "Supported"
         },
-        "url": "https://wicg.github.io/IntersectionObserver/",
+        "url": "https://www.w3.org/TR/intersection-observer/",
         "webkit-url": "https://bugs.webkit.org/show_bug.cgi?id=159475",
         "keywords": ["intersection", "intersection observer", "intersectionobserver"],
         "description": "An API that can be used to understand the visibility and position of DOM elements relative to a containing element or to the top-level viewport."
@@ -541,10 +544,10 @@
     {
         "name": "Pointer Lock",
         "status": {
-            "status": "Supported"
+            "status": "In development"
         },
         "url": "https://www.w3.org/TR/pointerlock/",
-        "webkit-url": "https://bugs.webkit.org/show_bug.cgi?id=164652",
+        "webkit-url": "https://bugs.webkit.org/show_bug.cgi?id=204001",
         "keywords": ["pointer", "pointer lock"],
         "description": "Provides scripted access to raw mouse movement data while locking the target of mouse events to a single element and removing the cursor from view."
     },
@@ -1157,12 +1160,12 @@
     {
         "name": "Payment Request",
         "status": {
-            "status": "Supported"
+            "status": "Not Considering"
         },
         "url": "https://www.w3.org/TR/payment-request/",
         "webkit-url": "https://bugs.webkit.org/show_bug.cgi?id=174796",
         "keywords": ["web payments", "payment request", "apple pay"],
-        "description": "An API for merchants to request payments from users."
+        "description": "An API for merchants to request payments from users. Not supported in WPE WebKit."
     },
     {
         "name": "Picture element",
@@ -1426,12 +1429,12 @@
     {
         "name": "Web Share",
         "status": {
-            "status": "Supported"
+            "status": "Not Considering"
         },
         "url": "https://github.com/WICG/web-share/blob/master/docs/interface.md",
         "webkit-url": "https://bugs.webkit.org/show_bug.cgi?id=171100",
         "keywords": ["sharing"],
-        "description": "An API to allow content from the page to be exposed to platform sharing APIs."
+        "description": "An API to allow content from the page to be exposed to platform sharing APIs. Not supported by WPEWebKit."
     },
     {
         "name": "WebUSB",

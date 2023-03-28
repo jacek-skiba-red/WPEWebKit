@@ -61,7 +61,7 @@
     border-top: 2px solid var(--selected-background-color);
 }
 
-.tree-outline.dom:not(.non-selectable):focus li:matches(.selected, .hovered) .selection-area {
+.tree-outline.dom:not(.non-selectable):focus li:is(.selected, .hovered) .selection-area {
     background-color: var(--selected-background-color);
 }
 
@@ -99,13 +99,13 @@
     display: block;
 }
 
-.tree-outline.dom li:matches(.hovered, .selected) + ol.children.expanded {
+.tree-outline.dom li:is(.hovered, .selected) + ol.children.expanded {
     -webkit-margin-start: var(--sublist-margin-start);
     -webkit-padding-start: var(--sublist-padding-start);
     border: 0 solid hsla(0, 0%, 83%, 0.5);
 }
 
-.tree-outline.dom li:matches(.hovered, .selected) + ol.children.expanded {
+.tree-outline.dom li:is(.hovered, .selected) + ol.children.expanded {
     border-left-width: var(--sublist-border-width-start);
 }
 
@@ -261,7 +261,7 @@
 }
 
 .highlight .selection-area {
-    animation: "dom-tree-outline-highlight-fadeout" 2s;
+    animation: dom-tree-outline-highlight-fadeout 2s;
 }
 
 .tree-outline.dom li .highlight {

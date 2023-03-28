@@ -173,16 +173,18 @@ public:
         {
         }
 
-        URISchemeHandler(const char* reply, int replyLength, const char* mimeType)
+        URISchemeHandler(const char* reply, int replyLength, const char* mimeType, int statusCode = 200)
             : reply(reply)
             , replyLength(replyLength)
             , mimeType(mimeType)
+            , statusCode(statusCode)
         {
         }
 
         CString reply;
         int replyLength;
         CString mimeType;
+        int statusCode;
     };
 
     static void uriSchemeRequestCallback(WebKitURISchemeRequest* request, gpointer userData)
@@ -196,6 +198,13 @@ public:
         const char* scheme = webkit_uri_scheme_request_get_scheme(request);
         g_assert_nonnull(scheme);
         g_assert_true(test->m_handlersMap.contains(String::fromUTF8(scheme)));
+
+        const char* method = webkit_uri_scheme_request_get_http_method(request);
+        g_assert_nonnull(method);
+        if (!g_strcmp0(scheme, "post"))
+            g_assert_cmpstr(method, ==, "POST");
+        else
+            g_assert_cmpstr(method, ==, "GET");
 
         const URISchemeHandler& handler = test->m_handlersMap.get(String::fromUTF8(scheme));
 
@@ -231,12 +240,15 @@ public:
         else if (!handler.reply.isNull())
             g_memory_input_stream_add_data(G_MEMORY_INPUT_STREAM(inputStream.get()), handler.reply.data(), handler.reply.length(), 0);
 
-        webkit_uri_scheme_request_finish(request, inputStream.get(), handler.replyLength, handler.mimeType.data());
+        auto response = adoptGRef(webkit_uri_scheme_response_new(inputStream.get(), handler.replyLength));
+        webkit_uri_scheme_response_set_status(response.get(), handler.statusCode, nullptr);
+        webkit_uri_scheme_response_set_content_type(response.get(), handler.mimeType.data());
+        webkit_uri_scheme_request_finish_with_response(request, response.get());
     }
 
-    void registerURISchemeHandler(const char* scheme, const char* reply, int replyLength, const char* mimeType)
+    void registerURISchemeHandler(const char* scheme, const char* reply, int replyLength, const char* mimeType, int statusCode = 200)
     {
-        m_handlersMap.set(String::fromUTF8(scheme), URISchemeHandler(reply, replyLength, mimeType));
+        m_handlersMap.set(String::fromUTF8(scheme), URISchemeHandler(reply, replyLength, mimeType, statusCode));
         webkit_web_context_register_uri_scheme(m_webContext.get(), scheme, uriSchemeRequestCallback, this, 0);
     }
 

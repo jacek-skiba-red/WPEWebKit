@@ -61,11 +61,11 @@
     color: var(--glyph-color-pressed);
 }
 
-.navigation-bar .item.button:not(.disabled):matches(:focus, .activate.activated, .radio.selected) > .glyph {
+.navigation-bar .item.button:not(.disabled):is(:focus, .activate.activated, .radio.selected) > .glyph {
     color: var(--glyph-color-active);
 }
 
-.navigation-bar .item.button:not(.disabled):active:matches(:focus, .activate.activated, .radio.selected) > .glyph {
+.navigation-bar .item.button:not(.disabled):active:is(:focus, .activate.activated, .radio.selected) > .glyph {
     color: var(--glyph-color-active-pressed);
 }
 

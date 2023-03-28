@@ -44,12 +44,12 @@
 }
 
 body[dir=ltr] .timeline-ruler > .header > .divider,
-body[dir=ltr] .timeline-ruler > .markers > :matches(.divider, .marker) {
+body[dir=ltr] .timeline-ruler > .markers > :is(.divider, .marker) {
     transform: translateX(var(--timeline-ruler-marker-translateX));
 }
 
 body[dir=rtl] .timeline-ruler > .header > .divider,
-body[dir=rtl] .timeline-ruler > .markers > :matches(.divider, .marker) {
+body[dir=rtl] .timeline-ruler > .markers > :is(.divider, .marker) {
     transform: translateX(calc(-1 * var(--timeline-ruler-marker-translateX)));
 }
 
@@ -181,7 +181,7 @@ body[dir=rtl] .timeline-ruler > .markers > .marker::after {
     color: red;
 }
 
-.timeline-ruler > .markers > .marker:matches(.stopping-time, .current-time)::after {
+.timeline-ruler > .markers > .marker:is(.stopping-time, .current-time)::after {
     top: var(--timeline-ruler-marker-after-offset);
     width: var(--timeline-ruler-marker-after-size);
     height: var(--timeline-ruler-marker-after-size);
@@ -240,7 +240,7 @@ body[dir=rtl] .timeline-ruler > .markers > .marker::after {
     display: none;
 }
 
-.timeline-ruler.selection-hidden > :matches(.selection-drag, .selection-handle, .shaded-area) {
+.timeline-ruler.selection-hidden > :is(.selection-drag, .selection-handle, .shaded-area) {
     display: none;
 }
 

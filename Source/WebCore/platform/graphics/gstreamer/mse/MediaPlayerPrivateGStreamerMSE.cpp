@@ -136,7 +136,7 @@ void MediaPlayerPrivateGStreamerMSE::load(const String& url, MediaSourcePrivateC
     m_mediaSource = mediaSource;
 
     if (!m_playbackPipeline)
-        m_playbackPipeline = PlaybackPipeline::create();
+        m_playbackPipeline = PlaybackPipeline::create(makeWeakPtr(*this));
 
     m_mediaSourcePrivate = MediaSourcePrivateGStreamer::open(*m_mediaSource.get(), *this);
 
@@ -185,7 +185,7 @@ void MediaPlayerPrivateGStreamerMSE::seek(const MediaTime& time)
         return;
     }
 
-    if (m_isLiveStream)
+    if (m_isLiveStream.value_or(false))
         return;
 
     if (m_isSeeking && m_isSeekPending) {
@@ -401,15 +401,8 @@ void MediaPlayerPrivateGStreamerMSE::maybeFinishSeek()
         return;
     }
 
-    GST_DEBUG("[Seek] Seeked to %s", toString(m_seekTime).utf8().data());
-
     webKitMediaSrcSetReadyForSamples(WEBKIT_MEDIA_SRC(m_source.get()), true);
-    m_isSeeking = false;
-    m_cachedPosition = MediaTime::invalidTime();
-    // The pipeline can still have a pending state. In this case a position query will fail.
-    // Right now we can use m_seekTime as a fallback.
-    m_canFallBackToLastFinishedSeekPosition = true;
-    timeChanged();
+    finishSeek();
 }
 
 bool MediaPlayerPrivateGStreamerMSE::seeking() const

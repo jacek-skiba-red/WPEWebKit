@@ -179,7 +179,9 @@ int64_t VCMTiming::RenderTimeMsInternal(uint32_t frame_timestamp,
                                         int64_t now_ms) const {
   if (min_playout_delay_ms_ == 0 && max_playout_delay_ms_ == 0) {
     // Render as soon as possible.
+#if !(defined WTF_PLATFORM_REALTEK && WTF_PLATFORM_REALTEK) && !(defined WTF_PLATFORM_BROADCOM && WTF_PLATFORM_BROADCOM)
     return 0;
+#endif
   }
   int64_t estimated_complete_time_ms =
       ts_extrapolator_->ExtrapolateLocalTime(frame_timestamp);

@@ -34,6 +34,7 @@
 #elif defined(USE_SYSTEM_MALLOC) && USE_SYSTEM_MALLOC
 #if OS(LINUX)
 #include <sys/sysinfo.h>
+#include <wtf/text/WTFString.h>
 #endif // OS(LINUX)
 #else
 #include <bmalloc/bmalloc.h>

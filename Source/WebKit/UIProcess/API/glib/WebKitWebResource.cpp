@@ -413,3 +413,18 @@ guchar* webkit_web_resource_get_data_finish(WebKitWebResource* resource, GAsyncR
         *length = data->webData->size();
     return static_cast<guchar*>(g_memdup(data->webData->bytes(), data->webData->size()));
 }
+
+/**
+ * webkit_web_resource_belongs_to_main_frame:
+ * @resource: a #WebKitWebResource
+ *
+ * Returns whether the resource belongs to the main frame of the page.
+ *
+ * Returns: %TRUE if @resource belongs to the main frame or %FALSE otherwise.
+ */
+gboolean webkit_web_resource_belongs_to_main_frame (WebKitWebResource *resource)
+{
+    g_return_val_if_fail(WEBKIT_IS_WEB_RESOURCE(resource), FALSE);
+
+    return resource->priv->frame->isMainFrame();
+}

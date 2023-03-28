@@ -74,7 +74,7 @@ public:
         if (gst_pad_link(srcpad, sinkpad) != GST_PAD_LINK_OK)
             ASSERT_NOT_REACHED();
     }
-#if PLATFORM(BROADCOM)
+#if PLATFORM(BROADCOM) || PLATFORM(REALTEK)
     static unsigned getGstAutoplugSelectResult(const char* nick)
     {
         static GEnumClass* enumClass = static_cast<GEnumClass*>(g_type_class_ref(g_type_from_name("GstAutoplugSelectResult")));
@@ -87,6 +87,9 @@ public:
     static unsigned decodebinAutoplugSelect(GstElement *, GstPad *, GstCaps *, GstElementFactory *factory, gpointer)
     {
         if (g_str_has_prefix(gst_plugin_feature_get_plugin_name(GST_PLUGIN_FEATURE_CAST(factory)), "brcm")) {
+            return getGstAutoplugSelectResult("skip");
+        }
+        if (g_str_has_prefix(gst_plugin_feature_get_plugin_name(GST_PLUGIN_FEATURE_CAST(factory)), "omx")) {
             return getGstAutoplugSelectResult("skip");
         }
         return getGstAutoplugSelectResult("try");
@@ -124,7 +127,7 @@ public:
 
         auto sinkpad = adoptGRef(gst_element_get_static_pad(capsfilter, "sink"));
         g_signal_connect(decoder, "pad-added", G_CALLBACK(decodebinPadAddedCb), sinkpad.get());
-#if PLATFORM(BROADCOM)
+#if PLATFORM(BROADCOM) || PLATFORM(REALTEK)
         g_signal_connect(decoder, "autoplug-select", G_CALLBACK(decodebinAutoplugSelect), nullptr);
 #endif
         // Make the decoder output "parsed" frames only and let the main decodebin
@@ -371,7 +374,11 @@ private:
 
 class H264Decoder : public GStreamerVideoDecoder {
 public:
-    H264Decoder() { m_requireParse = true; }
+    H264Decoder() {
+#if !PLATFORM(REALTEK) && !PLATFORM(BROADCOM)
+        m_requireParse = true;
+#endif
+    }
 
     int32_t InitDecode(const webrtc::VideoCodec* codecInfo, int32_t nCores) final
     {

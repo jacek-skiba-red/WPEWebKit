@@ -141,7 +141,7 @@ static void setLogging(rtc::LoggingSeverity level)
 
 static rtc::LoggingSeverity computeLogLevel()
 {
-#if defined(NDEBUG)
+#if defined(NDEBUG) || !RELEASE_LOG_DISABLED
 #if !LOG_DISABLED || !RELEASE_LOG_DISABLED
     if (LogWebRTC.state != WTFLogChannelState::On)
         return rtc::LS_ERROR;
