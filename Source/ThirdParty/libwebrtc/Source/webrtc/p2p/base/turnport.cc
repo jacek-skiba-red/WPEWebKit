@@ -68,6 +68,7 @@ class TurnAllocateRequest : public StunRequest {
   void OnResponse(StunMessage* response) override;
   void OnErrorResponse(StunMessage* response) override;
   void OnTimeout() override;
+  void SetRequestPreference(bool ipv6);
 
  private:
   // Handles authentication challenge from the server.
@@ -76,6 +77,7 @@ class TurnAllocateRequest : public StunRequest {
   void OnUnknownAttribute(StunMessage* response);
 
   TurnPort* port_;
+  bool ipv6_preference;
 };
 
 class TurnRefreshRequest : public StunRequest {
@@ -218,6 +220,7 @@ TurnPort::TurnPort(rtc::Thread* thread,
       turn_customizer_(customizer) {
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
   request_manager_.set_origin(origin);
+  send_ipv6_request = false;
 }
 
 TurnPort::TurnPort(rtc::Thread* thread,
@@ -260,6 +263,7 @@ TurnPort::TurnPort(rtc::Thread* thread,
       turn_customizer_(customizer) {
   request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
   request_manager_.set_origin(origin);
+  send_ipv6_request = false;
 }
 
 TurnPort::~TurnPort() {
@@ -345,7 +349,9 @@ void TurnPort::PrepareAddress() {
     if (server_address_.proto == PROTO_UDP) {
       // If its UDP, send AllocateRequest now.
       // For TCP and TLS AllcateRequest will be sent by OnSocketConnect.
-      SendRequest(new TurnAllocateRequest(this), 0);
+      TurnAllocateRequest * newRequest = new TurnAllocateRequest(this);
+      newRequest->SetRequestPreference(this->send_ipv6_request);
+      SendRequest(newRequest, 0);
     }
   }
 }
@@ -471,7 +477,9 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
 
   RTC_LOG(LS_INFO) << "TurnPort connected to "
                    << socket->GetRemoteAddress().ToString() << " using tcp.";
-  SendRequest(new TurnAllocateRequest(this), 0);
+  TurnAllocateRequest * newRequest = new TurnAllocateRequest(this);
+  newRequest->SetRequestPreference(this->send_ipv6_request);
+  SendRequest(newRequest, 0);
 }
 
 void TurnPort::OnSocketClose(rtc::AsyncPacketSocket* socket, int error) {
@@ -833,7 +841,17 @@ void TurnPort::OnAllocateSuccess(const rtc::SocketAddress& address,
              ProtoToString(server_address_.proto),  // The first hop protocol.
              "",  // TCP canddiate type, empty for turn candidates.
              RELAY_PORT_TYPE, GetRelayPreference(server_address_.proto),
-             server_priority_, ReconstructedServerUrl(), true);
+			 server_priority_, ReconstructedServerUrl(), send_ipv6_request);
+
+// If we have received a allocate success, try to do the same to do a V6 allocation
+  if (send_ipv6_request == false) {
+    RTC_LOG(LS_INFO) << "Allocating a new V6 socket after "
+      << "OnAllocateSuccess, retry = ";
+    send_ipv6_request = true;
+    this->set_realm(""); // Clear the realm so that hash can be computed
+    this->hash_.clear();
+    PrepareAddress();
+  } 
 }
 
 void TurnPort::OnAllocateError() {
@@ -905,7 +923,9 @@ void TurnPort::OnMessage(rtc::Message* message) {
       if (server_address().proto == PROTO_UDP) {
         // Send another allocate request to alternate server, with the received
         // realm and nonce values.
-        SendRequest(new TurnAllocateRequest(this), 0);
+        TurnAllocateRequest * newRequest = new TurnAllocateRequest(this);
+        newRequest->SetRequestPreference(this->send_ipv6_request);
+        SendRequest(newRequest, 0);
       } else {
         // Since it's TCP, we have to delete the connected socket and reconnect
         // with the alternate server. PrepareAddress will send stun binding once
@@ -1272,7 +1292,12 @@ bool TurnPort::TurnCustomizerAllowChannelData(const void* data,
 }
 
 TurnAllocateRequest::TurnAllocateRequest(TurnPort* port)
-    : StunRequest(new TurnMessage()), port_(port) {}
+    : StunRequest(new TurnMessage()), port_(port), ipv6_preference(false) {}
+
+void TurnAllocateRequest::SetRequestPreference(bool ipv6)
+{
+   ipv6_preference = ipv6;
+}
 
 void TurnAllocateRequest::Prepare(StunMessage* request) {
   // Create the request as indicated in RFC 5766, Section 6.1.
@@ -1281,6 +1306,23 @@ void TurnAllocateRequest::Prepare(StunMessage* request) {
       StunAttribute::CreateUInt32(STUN_ATTR_REQUESTED_TRANSPORT);
   transport_attr->SetValue(IPPROTO_UDP << 24);
   request->AddAttribute(std::move(transport_attr));
+
+  // Below patch is to add the support for ipv6 relay candidate
+  // The REQUESTED-ADDRESS-FAMILY attribute is used by clients to request
+  // the allocation of a specific address type from a server.
+  // There are two values defined for this field and
+  // specified in [RFC5389], Section 15.1: 0x01 for IPv4 addresses and 0x02 for IPv6 addresses.
+  auto family_attr = StunAttribute::CreateUInt32(STUN_ATTR_REQUESTED_ADDRESS_FAMILY);
+
+  // Check if the server address is IPv6
+  if (ipv6_preference) {
+    family_attr->SetValue((STUN_ATTR_IPV6_FAMILY) << 24);
+  }
+  else {
+    family_attr->SetValue((STUN_ATTR_IPV4_FAMILY) << 24);
+  }
+  request->AddAttribute(std::move(family_attr));
+
   if (!port_->hash().empty()) {
     port_->AddRequestAuthInfo(request);
   }
@@ -1405,7 +1447,9 @@ void TurnAllocateRequest::OnAuthChallenge(StunMessage* response, int code) {
   port_->set_nonce(nonce_attr->GetString());
 
   // Send another allocate request, with the received realm and nonce values.
-  port_->SendRequest(new TurnAllocateRequest(port_), 0);
+  TurnAllocateRequest * newRequest = new TurnAllocateRequest(port_);
+  newRequest->SetRequestPreference(port_->send_ipv6_request);
+  port_->SendRequest(newRequest, 0);
 }
 
 void TurnAllocateRequest::OnTryAlternate(StunMessage* response, int code) {

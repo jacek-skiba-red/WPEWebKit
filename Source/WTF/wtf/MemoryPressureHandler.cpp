@@ -26,6 +26,9 @@
 #include "config.h"
 #include <wtf/MemoryPressureHandler.h>
 
+#if OS(LINUX)
+#include <unistd.h>
+#endif
 #include <wtf/MemoryFootprint.h>
 #include <wtf/NeverDestroyed.h>
 #include <wtf/RAMSize.h>
@@ -287,14 +290,23 @@ void MemoryPressureHandler::ReliefLogger::logMemoryUsageChange()
 
     auto currentMemory = platformMemoryUsage();
     if (!currentMemory || !m_initialMemory) {
+#if OS(LINUX)
+        MEMORYPRESSURE_LOG("Memory pressure relief: pid = %d, %" PUBLIC_LOG_STRING ": (Unable to get dirty memory information for process)", getpid(), m_logString);
+#else
         MEMORYPRESSURE_LOG("Memory pressure relief: %" PUBLIC_LOG_STRING ": (Unable to get dirty memory information for process)", m_logString);
+#endif
         return;
     }
 
     long residentDiff = currentMemory->resident - m_initialMemory->resident;
     long physicalDiff = currentMemory->physical - m_initialMemory->physical;
 
+#if !OS(LINUX)
     MEMORYPRESSURE_LOG("Memory pressure relief: %" PUBLIC_LOG_STRING ": res = %zu/%zu/%ld, res+swap = %zu/%zu/%ld",
+#else
+    MEMORYPRESSURE_LOG("Memory pressure relief: pid = %d, %" PUBLIC_LOG_STRING ": res = %zu/%zu/%ld, res+swap = %zu/%zu/%ld",
+        getpid(),
+#endif
         m_logString,
         m_initialMemory->resident, currentMemory->resident, residentDiff,
         m_initialMemory->physical, currentMemory->physical, physicalDiff);

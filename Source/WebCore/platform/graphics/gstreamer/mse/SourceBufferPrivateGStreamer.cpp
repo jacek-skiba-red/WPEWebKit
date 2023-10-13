@@ -46,6 +46,10 @@
 #include "NotImplemented.h"
 #include "PlaybackPipeline.h"
 #include "WebKitMediaSourceGStreamer.h"
+#include <wtf/text/StringToIntegerConversion.h>
+
+GST_DEBUG_CATEGORY_EXTERN(webkit_mse_debug);
+#define GST_CAT_DEFAULT webkit_mse_debug
 
 namespace WebCore {
 
@@ -128,7 +132,7 @@ void SourceBufferPrivateGStreamer::flush(const AtomString& trackId)
     ASSERT(isMainThread());
 
     // This is only for on-the-fly reenqueues after appends. When seeking, the seek will do its own flush.
-    if (!m_playerPrivate.seeking())
+    if (!m_playerPrivate.seeking() || m_playerPrivate.gstSeekCompleted())
         m_playerPrivate.playbackPipeline()->flush(trackId);
 }
 
@@ -208,6 +212,25 @@ WTFLogChannel& SourceBufferPrivateGStreamer::logChannel() const
     return LogMediaSource;
 }
 #endif
+
+size_t SourceBufferPrivateGStreamer::platformEvictionThreshold() const
+{
+    static size_t evictionThreshold = 0;
+    static std::once_flag once;
+    std::call_once(once, []() {
+        const char* characters = std::getenv("MSE_BUFFER_SAMPLES_EVICTION_THRESHOLD");
+        if (!characters)
+            return;
+        StringView stringView(characters);
+        if (stringView.isEmpty())
+            return;
+        bool ok = false;
+        size_t size = toIntegralType<size_t>(stringView, &ok);
+        if (ok)
+            evictionThreshold = size;
+    });
+    return evictionThreshold;
+}
 
 }
 #endif

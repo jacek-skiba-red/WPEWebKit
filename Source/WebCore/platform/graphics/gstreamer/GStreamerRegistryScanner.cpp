@@ -386,7 +386,7 @@ bool GStreamerRegistryScanner::supportsFeatures(const String& features) const
 {
     // Apple TV requires this one for DD+.
     constexpr auto dolbyDigitalPlusJOC = "joc";
-    if (features == dolbyDigitalPlusJOC)
+    if (equalIgnoringASCIICase(features, dolbyDigitalPlusJOC))
         return true;
 
     return false;

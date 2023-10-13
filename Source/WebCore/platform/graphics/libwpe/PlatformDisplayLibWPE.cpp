@@ -63,12 +63,15 @@ PlatformDisplayLibWPE::PlatformDisplayLibWPE()
 
 PlatformDisplayLibWPE::~PlatformDisplayLibWPE()
 {
-    wpe_renderer_backend_egl_destroy(m_backend);
+    if (m_backend)
+        wpe_renderer_backend_egl_destroy(m_backend);
 }
 
 bool PlatformDisplayLibWPE::initialize(int hostFd)
 {
     m_backend = wpe_renderer_backend_egl_create(hostFd);
+    if (!m_backend)
+        return false;
 
     m_eglDisplay = eglGetDisplay(wpe_renderer_backend_egl_get_native_display(m_backend));
     if (m_eglDisplay == EGL_NO_DISPLAY) {

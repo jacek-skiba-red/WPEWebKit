@@ -34,12 +34,14 @@
 
 namespace WebCore {
 
-AudioTrackPrivateGStreamer::AudioTrackPrivateGStreamer(WeakPtr<MediaPlayerPrivateGStreamer> player, gint index, GRefPtr<GstPad> pad)
-    : TrackPrivateBaseGStreamer(this, index, pad)
+AudioTrackPrivateGStreamer::AudioTrackPrivateGStreamer(WeakPtr<MediaPlayerPrivateGStreamer> player, gint index, GRefPtr<GstPad> pad, AtomString streamID)
+    : TrackPrivateBaseGStreamer(TrackType::Audio, this, index, pad)
     , m_player(player)
 {
-    // FIXME: Get a real ID from the tkhd atom.
-    m_id = "A" + String::number(index);
+    if (streamID.isNull())
+        return;
+
+    m_id = streamID;
 }
 
 AudioTrackPrivateGStreamer::AudioTrackPrivateGStreamer(WeakPtr<MediaPlayerPrivateGStreamer> player, gint index, GRefPtr<GstStream> stream)
@@ -53,8 +55,6 @@ AudioTrackPrivateGStreamer::AudioTrackPrivateGStreamer(WeakPtr<MediaPlayerPrivat
         GstStreamFlags streamFlags = gst_stream_get_stream_flags(stream.get());
         gst_stream_set_stream_flags(stream.get(), static_cast<GstStreamFlags>(streamFlags | GST_STREAM_FLAG_SELECT));
     }
-
-    m_id = gst_stream_get_stream_id(stream.get());
 }
 
 AudioTrackPrivate::Kind AudioTrackPrivateGStreamer::kind() const

@@ -973,6 +973,17 @@ void SourceBuffer::removeTimerFired()
     scheduleEvent(eventNames().updateendEvent);
 }
 
+bool SourceBuffer::hasTooManySamples() const
+{
+    const size_t evictionThreshold = m_private->platformEvictionThreshold();
+    if (!evictionThreshold)
+        return false;
+    size_t currentSize = 0;
+    for (const auto& trackBuffer : m_trackBufferMap.values())
+        currentSize += trackBuffer.samples.size();
+    return currentSize > evictionThreshold;
+}
+
 void SourceBuffer::evictCodedFrames(size_t newDataSize)
 {
     // 3.5.13 Coded Frame Eviction Algorithm
@@ -984,13 +995,13 @@ void SourceBuffer::evictCodedFrames(size_t newDataSize)
     // This algorithm is run to free up space in this source buffer when new data is appended.
     // 1. Let new data equal the data that is about to be appended to this SourceBuffer.
     // 2. If the buffer full flag equals false, then abort these steps.
-    if (!m_bufferFull)
+    if (!m_bufferFull && !hasTooManySamples())
         return;
 
     size_t maximumBufferSize = this->maximumBufferSize();
 
     // Check if app has removed enough already.
-    if (extraMemoryCost() + newDataSize < maximumBufferSize) {
+    if (m_bufferFull && extraMemoryCost() + newDataSize < maximumBufferSize) {
         m_bufferFull = false;
         return;
     }

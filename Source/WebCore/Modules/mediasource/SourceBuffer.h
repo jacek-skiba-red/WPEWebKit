@@ -195,6 +195,7 @@ private:
 
     void removeTimerFired();
     void removeCodedFrames(const MediaTime& start, const MediaTime& end);
+    bool hasTooManySamples() const;
 
     size_t extraMemoryCost() const;
     void reportExtraMemoryAllocated();

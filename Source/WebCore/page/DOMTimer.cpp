@@ -272,10 +272,7 @@ void DOMTimer::scriptDidInteractWithPlugin(HTMLPlugInElement& pluginElement)
     if (!DOMTimerFireState::current)
         return;
 
-    if (pluginElement.isUserObservable())
         DOMTimerFireState::current->setScriptMadeUserObservableChanges();
-    else
-        DOMTimerFireState::current->setScriptMadeNonUserObservableChanges();
 }
 
 void DOMTimer::fired()

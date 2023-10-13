@@ -77,6 +77,8 @@ public:
     virtual const Logger& sourceBufferLogger() const = 0;
     virtual const void* sourceBufferLogIdentifier() = 0;
 #endif
+
+    virtual size_t platformEvictionThreshold() const { return 0; }
 };
 
 }

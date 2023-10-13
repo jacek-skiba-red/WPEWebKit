@@ -1104,6 +1104,8 @@ StunAttributeValueType TurnMessage::GetAttributeValueType(int type) const {
       return STUN_VALUE_BYTE_STRING;
     case STUN_ATTR_RESERVATION_TOKEN:
       return STUN_VALUE_BYTE_STRING;
+    case STUN_ATTR_REQUESTED_ADDRESS_FAMILY:
+      return STUN_VALUE_UINT32;
     default:
       return StunMessage::GetAttributeValueType(type);
   }

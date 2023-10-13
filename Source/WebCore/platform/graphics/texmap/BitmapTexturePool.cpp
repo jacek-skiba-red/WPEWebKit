@@ -26,6 +26,7 @@
 
 #include "config.h"
 #include "BitmapTexturePool.h"
+#include <numeric>
 
 #if USE(TEXTURE_MAPPER_GL)
 #include "BitmapTextureGL.h"
@@ -34,7 +35,9 @@
 namespace WebCore {
 
 static const Seconds releaseUnusedSecondsTolerance { 3_s };
-static const Seconds releaseUnusedTexturesTimerInterval { 500_ms };
+static const Seconds releaseUnusedSecondsToleranceWhenPixelLimitExceeded { 50_ms };
+static const Seconds releaseUnusedTexturesTimerInterval { 250_ms };
+constexpr uint64_t defaultStoredPixelsLimit { 10 * 1920 * 1080 };
 
 #if USE(TEXTURE_MAPPER_GL)
 BitmapTexturePool::BitmapTexturePool(const TextureMapperContextAttributes& contextAttributes)
@@ -74,6 +77,25 @@ void BitmapTexturePool::releaseUnusedTexturesTimerFired()
 
     // Delete entries, which have been unused in releaseUnusedSecondsTolerance.
     MonotonicTime minUsedTime = MonotonicTime::now() - releaseUnusedSecondsTolerance;
+
+    static uint64_t storedPixelsLimit = defaultStoredPixelsLimit;
+    std::once_flag onceFlag;
+    std::call_once(onceFlag, []() {
+        String envString(getenv("WPE_BITMAP_TEXTURE_POOL_PIXEL_LIMIT"));
+        if (!envString.isEmpty() && envString.toUInt64() > 0)
+            storedPixelsLimit = envString.toUInt64();
+    });
+    const uint64_t storedPixelsNumber = std::accumulate(
+        m_textures.begin(),
+        m_textures.end(),
+        0,
+        [](const uint64_t accumulator, const auto& textureEntry) {
+            const auto& textureSize = textureEntry.m_texture->size();
+            return accumulator + textureSize.width() * textureSize.height();
+        }
+    );
+    if (storedPixelsNumber >= storedPixelsLimit)
+        minUsedTime = MonotonicTime::now() - releaseUnusedSecondsToleranceWhenPixelLimitExceeded;
 
     m_textures.removeAllMatching([&minUsedTime](const Entry& entry) {
         return entry.canBeReleased(minUsedTime);

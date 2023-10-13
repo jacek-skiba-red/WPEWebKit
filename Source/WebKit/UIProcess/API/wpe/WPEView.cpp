@@ -61,6 +61,19 @@ View::View(struct wpe_view_backend* backend, const API::PageConfiguration& baseC
         preferences = &configuration->pageGroup()->preferences();
         configuration->setPreferences(preferences);
     }
+
+    bool isHeadless = WTF::findIgnoringASCIICaseWithoutLength(
+        wpe_loader_get_loaded_implementation_library_name(), "headless") != WTF::notFound;
+    if (preferences && isHeadless) {
+        preferences->setNonCompositedWebGLEnabled(true);
+        preferences->setAcceleratedCompositingEnabled(false);
+        preferences->setForceCompositingMode(false);
+        preferences->setThreadedScrollingEnabled(false);
+        preferences->setAccelerated2dCanvasEnabled(false);
+        preferences->setWebGLEnabled(false);
+    }
+    else
+
     if (preferences) {
         preferences->setAcceleratedCompositingEnabled(true);
         preferences->setForceCompositingMode(true);

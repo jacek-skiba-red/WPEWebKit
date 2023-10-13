@@ -486,10 +486,6 @@ void MediaPlayerPrivateGStreamerMSE::sourceSetup(GstElement* sourceElement)
     m_eosMarked = false;
 
     m_playbackPipeline->setWebKitMediaSrc(WEBKIT_MEDIA_SRC(m_source.get()));
-
-    g_signal_connect_swapped(m_source.get(), "video-changed", G_CALLBACK(videoChangedCallback), this);
-    g_signal_connect_swapped(m_source.get(), "audio-changed", G_CALLBACK(audioChangedCallback), this);
-    g_signal_connect_swapped(m_source.get(), "text-changed", G_CALLBACK(textChangedCallback), this);
     webKitMediaSrcSetMediaPlayerPrivate(WEBKIT_MEDIA_SRC(m_source.get()), this);
 
     if (shouldRestoreTracks) {
@@ -511,12 +507,13 @@ void MediaPlayerPrivateGStreamerMSE::updateStates()
     if (UNLIKELY(!m_pipeline || m_didErrorOccur))
         return;
 
+    const bool mseBuffering = !isTimeBuffered(currentMediaTime());
+
     MediaPlayer::NetworkState oldNetworkState = m_networkState;
     MediaPlayer::ReadyState oldReadyState = m_readyState;
     GstState state, pending;
 
     GstStateChangeReturn getStateResult = gst_element_get_state(m_pipeline.get(), &state, &pending, 250 * GST_NSECOND);
-    const bool mseBuffering = !isTimeBuffered(currentMediaTime());
 
     bool shouldUpdatePlaybackState = false;
     switch (getStateResult) {
