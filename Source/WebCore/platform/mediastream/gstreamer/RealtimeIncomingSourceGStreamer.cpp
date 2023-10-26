@@ -120,6 +120,7 @@ int RealtimeIncomingSourceGStreamer::registerClient(GRefPtr<GstElement>&& appsrc
             self->dispatchSample(WTFMove(sample));
             return GST_FLOW_OK;
         },
+#if GST_CHECK_VERSION(1, 20, 0)
         [](GstAppSink* sink, gpointer userData) -> gboolean {
             auto* self = reinterpret_cast<RealtimeIncomingSourceGStreamer*>(userData);
             auto event = adoptGRef(GST_EVENT_CAST(gst_app_sink_pull_object(sink)));
@@ -153,9 +154,6 @@ int RealtimeIncomingSourceGStreamer::registerClient(GRefPtr<GstElement>&& appsrc
 
             return false;
         },
-#if GST_CHECK_VERSION(1, 23, 0)
-        // propose_allocation
-        nullptr,
 #endif
         { nullptr }
     };

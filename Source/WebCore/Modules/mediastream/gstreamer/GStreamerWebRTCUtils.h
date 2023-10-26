@@ -238,6 +238,7 @@ static inline GstWebRTCICETransportPolicy iceTransportPolicyFromConfiguration(co
     return GST_WEBRTC_ICE_TRANSPORT_POLICY_ALL;
 }
 
+#if GST_CHECK_VERSION(1, 20, 0)
 static inline std::optional<RTCErrorDetailType> toRTCErrorDetailType(GstWebRTCError code)
 {
     switch (code) {
@@ -258,6 +259,7 @@ static inline std::optional<RTCErrorDetailType> toRTCErrorDetailType(GstWebRTCEr
         return { };
     };
 }
+#endif
 
 RefPtr<RTCError> toRTCError(GError*);
 

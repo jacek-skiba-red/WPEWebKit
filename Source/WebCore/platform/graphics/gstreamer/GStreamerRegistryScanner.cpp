@@ -884,10 +884,12 @@ RTCRtpCapabilities GStreamerRegistryScanner::videoRtpCapabilities(Configuration 
 static inline Vector<RTCRtpCapabilities::HeaderExtensionCapability> probeRtpExtensions(const Vector<const char*>& candidates)
 {
     Vector<RTCRtpCapabilities::HeaderExtensionCapability> extensions;
+#if GST_CHECK_VERSION(1, 20, 0)
     for (const auto& uri : candidates) {
         if (auto extension = adoptGRef(gst_rtp_header_extension_create_from_uri(uri)))
             extensions.append({ String::fromLatin1(uri) });
     }
+#endif
     return extensions;
 }
 
